@@ -1,0 +1,44 @@
+apiVersion: iam.aws.upbound.io/v1beta1
+kind: Role
+metadata:
+  name: demo-ec2-role
+spec:
+  forProvider:
+    assumeRolePolicy: |
+      {
+        "Version": "2012-10-17",
+        "Statement": [
+          {
+            "Effect": "Allow",
+            "Principal": { "Service": "ec2.amazonaws.com" },
+            "Action": "sts:AssumeRole"
+          }
+        ]
+      }
+    tags:
+      Name: demo-ec2-role
+  providerConfigRef:
+    name: default
+---
+apiVersion: iam.aws.upbound.io/v1beta1
+kind: RolePolicyAttachment
+metadata:
+  name: demo-ec2-s3-readonly
+spec:
+  forProvider:
+    policyArn: arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess
+    roleRef:
+      name: demo-ec2-role
+  providerConfigRef:
+    name: default
+---
+apiVersion: iam.aws.upbound.io/v1beta1
+kind: InstanceProfile
+metadata:
+  name: demo-ec2-profile
+spec:
+  forProvider:
+    roleRef:
+      name: demo-ec2-role
+  providerConfigRef:
+    name: default
