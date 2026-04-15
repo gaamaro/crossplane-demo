@@ -68,6 +68,50 @@ step_ok "New secret created"
 rm -f "$CREDS_FILE"
 step_ok "Temp file cleaned"
 
+# ── Purge old managed resources ──
+header "Purging Stale Resources (old lab)"
+
+step_info "Pausing ArgoCD auto-sync..."
+kubectl patch application crossplane-resources -n argocd --type merge -p '{"spec":{"syncPolicy":null}}'
+step_ok "Auto-sync paused"
+
+RESOURCE_TYPES=(
+  "lblisteners.elbv2.aws.upbound.io"
+  "lbtargetgroupattachments.elbv2.aws.upbound.io"
+  "lbtargetgroups.elbv2.aws.upbound.io"
+  "lb.elbv2.aws.upbound.io"
+  "instances.ec2.aws.upbound.io"
+  "instanceprofiles.iam.aws.upbound.io"
+  "rolepolicyattachments.iam.aws.upbound.io"
+  "roles.iam.aws.upbound.io"
+  "securitygrouprules.ec2.aws.upbound.io"
+  "securitygroups.ec2.aws.upbound.io"
+  "routes.ec2.aws.upbound.io"
+  "routetableassociations.ec2.aws.upbound.io"
+  "routetables.ec2.aws.upbound.io"
+  "natgateways.ec2.aws.upbound.io"
+  "eips.ec2.aws.upbound.io"
+  "subnets.ec2.aws.upbound.io"
+  "internetgateways.ec2.aws.upbound.io"
+  "vpcs.ec2.aws.upbound.io"
+  "buckets.s3.aws.upbound.io"
+)
+
+for rt in "${RESOURCE_TYPES[@]}"; do
+  ITEMS=$(kubectl get "$rt" --no-headers -o custom-columns=NAME:.metadata.name 2>/dev/null || true)
+  if [[ -n "$ITEMS" ]]; then
+    while IFS= read -r item; do
+      kubectl patch "$rt" "$item" --type merge -p '{"metadata":{"finalizers":[]}}' 2>/dev/null || true
+      kubectl delete "$rt" "$item" --wait=false 2>/dev/null || true
+      step_ok "Deleted $rt/$item"
+    done <<< "$ITEMS"
+  fi
+done
+
+step_info "Waiting for resources to be removed (30s)..."
+sleep 30
+step_ok "Purge complete"
+
 # ── Restart provider pods ──
 header "Restarting Provider Pods"
 
@@ -120,3 +164,11 @@ done
 
 printf "\n${GREEN}━━━ Rotation complete! ━━━${RESET}\n\n"
 step_info "New credentials active. ArgoCD will reconcile automatically."
+
+# ── Re-enable ArgoCD auto-sync ──
+header "Re-enabling ArgoCD"
+
+kubectl patch application crossplane-resources -n argocd --type merge -p '{"spec":{"syncPolicy":{"automated":{"prune":true,"selfHeal":true}}}}'
+step_ok "Auto-sync re-enabled — ArgoCD will recreate all resources"
+
+step_info "Monitor with: watch -n5 'kubectl get application crossplane-resources -n argocd -o jsonpath=\"{.status.health.status}\"'"

@@ -1,0 +1,59 @@
+name: Validate Crossplane Resources
+
+on:
+  pull_request:
+    paths:
+    - 'infra/**'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install yamllint
+      run: pip install yamllint
+
+    - name: YAML Lint
+      run: |
+        cat > /tmp/yamllint.yaml <<EOF
+        extends: default
+        rules:
+          line-length:
+            max: 200
+          truthy:
+            check-keys: false
+          document-start: disable
+          indentation:
+            spaces: 2
+        EOF
+        yamllint -c /tmp/yamllint.yaml infra/
+
+    - name: Structure Validation
+      run: |
+        ERRORS=0
+        for file in $(find infra/crossplane/resources -name '*.yaml'); do
+          for field in apiVersion kind metadata spec; do
+            if ! grep -q "^${field}:" "$file"; then
+              echo "❌ Missing '$field' in $file"
+              ERRORS=$((ERRORS+1))
+            fi
+          done
+        done
+        if [ $ERRORS -gt 0 ]; then exit 1; fi
+        echo "✔ All files valid"
+
+    - name: Security - No open non-HTTP ingress
+      run: |
+        ERRORS=0
+        for file in $(find infra -name '*.yaml'); do
+          if grep -q "0\.0\.0\.0/0" "$file" && grep -q "type: ingress" "$file"; then
+            PORT=$(grep -A2 "0\.0\.0\.0/0" "$file" | grep "toPort" | awk '{print $2}')
+            if [ "$PORT" != "80" ] && [ "$PORT" != "443" ]; then
+              echo "❌ Open ingress on port $PORT in $file"
+              ERRORS=$((ERRORS+1))
+            fi
+          fi
+        done
+        if [ $ERRORS -gt 0 ]; then exit 1; fi
+        echo "✔ Security checks passed"
