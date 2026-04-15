@@ -1,4 +1,4 @@
 .env
 istio-*/
 awscliv2.zip
-aws/*
+aws/*kubectl
