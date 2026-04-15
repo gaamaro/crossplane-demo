@@ -1,0 +1,142 @@
+apiVersion: ec2.aws.upbound.io/v1beta1
+kind: EIP
+metadata:
+  name: demo-nat-eip
+spec:
+  forProvider:
+    region: us-east-1
+    domain: vpc
+    tags:
+      Name: demo-nat-eip
+  providerConfigRef:
+    name: default
+---
+apiVersion: ec2.aws.upbound.io/v1beta1
+kind: NATGateway
+metadata:
+  name: demo-nat-gw
+spec:
+  forProvider:
+    region: us-east-1
+    subnetIdRef:
+      name: demo-public-1a
+    allocationIdRef:
+      name: demo-nat-eip
+    tags:
+      Name: demo-nat-gw
+  providerConfigRef:
+    name: default
+---
+apiVersion: ec2.aws.upbound.io/v1beta1
+kind: RouteTable
+metadata:
+  name: demo-public-rt
+spec:
+  forProvider:
+    region: us-east-1
+    vpcIdRef:
+      name: demo-vpc
+    tags:
+      Name: demo-public-rt
+  providerConfigRef:
+    name: default
+---
+apiVersion: ec2.aws.upbound.io/v1beta1
+kind: Route
+metadata:
+  name: demo-public-route
+spec:
+  forProvider:
+    region: us-east-1
+    routeTableIdRef:
+      name: demo-public-rt
+    destinationCidrBlock: 0.0.0.0/0
+    gatewayIdRef:
+      name: demo-igw
+  providerConfigRef:
+    name: default
+---
+apiVersion: ec2.aws.upbound.io/v1beta1
+kind: RouteTableAssociation
+metadata:
+  name: demo-public-1a-rta
+spec:
+  forProvider:
+    region: us-east-1
+    routeTableIdRef:
+      name: demo-public-rt
+    subnetIdRef:
+      name: demo-public-1a
+  providerConfigRef:
+    name: default
+---
+apiVersion: ec2.aws.upbound.io/v1beta1
+kind: RouteTableAssociation
+metadata:
+  name: demo-public-1b-rta
+spec:
+  forProvider:
+    region: us-east-1
+    routeTableIdRef:
+      name: demo-public-rt
+    subnetIdRef:
+      name: demo-public-1b
+  providerConfigRef:
+    name: default
+---
+apiVersion: ec2.aws.upbound.io/v1beta1
+kind: RouteTable
+metadata:
+  name: demo-private-rt
+spec:
+  forProvider:
+    region: us-east-1
+    vpcIdRef:
+      name: demo-vpc
+    tags:
+      Name: demo-private-rt
+  providerConfigRef:
+    name: default
+---
+apiVersion: ec2.aws.upbound.io/v1beta1
+kind: Route
+metadata:
+  name: demo-private-route
+spec:
+  forProvider:
+    region: us-east-1
+    routeTableIdRef:
+      name: demo-private-rt
+    destinationCidrBlock: 0.0.0.0/0
+    natGatewayIdRef:
+      name: demo-nat-gw
+  providerConfigRef:
+    name: default
+---
+apiVersion: ec2.aws.upbound.io/v1beta1
+kind: RouteTableAssociation
+metadata:
+  name: demo-private-1a-rta
+spec:
+  forProvider:
+    region: us-east-1
+    routeTableIdRef:
+      name: demo-private-rt
+    subnetIdRef:
+      name: demo-private-1a
+  providerConfigRef:
+    name: default
+---
+apiVersion: ec2.aws.upbound.io/v1beta1
+kind: RouteTableAssociation
+metadata:
+  name: demo-private-1b-rta
+spec:
+  forProvider:
+    region: us-east-1
+    routeTableIdRef:
+      name: demo-private-rt
+    subnetIdRef:
+      name: demo-private-1b
+  providerConfigRef:
+    name: default
