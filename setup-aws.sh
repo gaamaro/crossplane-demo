@@ -92,19 +92,21 @@ step_ok "Temp credentials file cleaned up"
 header "Crossplane AWS Provider"
 
 kubectl apply -f "$(dirname "$0")/infra/crossplane/provider.yaml"
-step_ok "Provider manifest applied"
+step_ok "Provider manifests applied"
 
-step_info "Waiting for provider to become healthy (timeout: 120s)..."
+PROVIDERS=("provider-aws-s3" "provider-aws-ec2" "provider-aws-iam" "provider-aws-elbv2" "upbound-provider-family-aws")
+step_info "Waiting for ${#PROVIDERS[@]} providers to become healthy (timeout: 180s)..."
 SECONDS=0
-until kubectl get provider provider-aws-s3 -o jsonpath='{.status.conditions[?(@.type=="Healthy")].status}' 2>/dev/null | grep -q "True"; do
-  if (( SECONDS > 120 )); then
-    step_fail "Provider did not become healthy within 120s"
-  fi
-  printf "\r  ${CYAN}${SPIN:SECONDS%${#SPIN}:1}${RESET} Waiting... (%ds)" "$SECONDS"
-  sleep 2
+for provider in "${PROVIDERS[@]}"; do
+  until kubectl get provider "$provider" -o jsonpath='{.status.conditions[?(@.type=="Healthy")].status}' 2>/dev/null | grep -q "True"; do
+    if (( SECONDS > 180 )); then
+      step_fail "Provider $provider did not become healthy within 180s"
+    fi
+    printf "\r  ${CYAN}${SPIN:SECONDS%${#SPIN}:1}${RESET} Waiting for $provider... (%ds)" "$SECONDS"
+    sleep 3
+  done
+  step_ok "$provider is healthy (${SECONDS}s)"
 done
-printf "\r"
-step_ok "Provider is healthy (${SECONDS}s)"
 
 # ── Apply ProviderConfig ──
 header "Provider Configuration"

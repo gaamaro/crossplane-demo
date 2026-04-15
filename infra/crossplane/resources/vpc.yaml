@@ -1,0 +1,96 @@
+apiVersion: ec2.aws.upbound.io/v1beta1
+kind: VPC
+metadata:
+  name: demo-vpc
+spec:
+  forProvider:
+    region: us-east-1
+    cidrBlock: 10.0.0.0/16
+    enableDnsSupport: true
+    enableDnsHostnames: true
+    tags:
+      Name: demo-vpc
+  providerConfigRef:
+    name: default
+---
+apiVersion: ec2.aws.upbound.io/v1beta1
+kind: InternetGateway
+metadata:
+  name: demo-igw
+spec:
+  forProvider:
+    region: us-east-1
+    vpcIdRef:
+      name: demo-vpc
+    tags:
+      Name: demo-igw
+  providerConfigRef:
+    name: default
+---
+apiVersion: ec2.aws.upbound.io/v1beta1
+kind: Subnet
+metadata:
+  name: demo-public-1a
+spec:
+  forProvider:
+    region: us-east-1
+    vpcIdRef:
+      name: demo-vpc
+    cidrBlock: 10.0.1.0/24
+    availabilityZone: us-east-1a
+    mapPublicIpOnLaunch: true
+    tags:
+      Name: demo-public-1a
+  providerConfigRef:
+    name: default
+---
+apiVersion: ec2.aws.upbound.io/v1beta1
+kind: Subnet
+metadata:
+  name: demo-public-1b
+spec:
+  forProvider:
+    region: us-east-1
+    vpcIdRef:
+      name: demo-vpc
+    cidrBlock: 10.0.2.0/24
+    availabilityZone: us-east-1b
+    mapPublicIpOnLaunch: true
+    tags:
+      Name: demo-public-1b
+  providerConfigRef:
+    name: default
+---
+apiVersion: ec2.aws.upbound.io/v1beta1
+kind: Subnet
+metadata:
+  name: demo-private-1a
+spec:
+  forProvider:
+    region: us-east-1
+    vpcIdRef:
+      name: demo-vpc
+    cidrBlock: 10.0.10.0/24
+    availabilityZone: us-east-1a
+    mapPublicIpOnLaunch: false
+    tags:
+      Name: demo-private-1a
+  providerConfigRef:
+    name: default
+---
+apiVersion: ec2.aws.upbound.io/v1beta1
+kind: Subnet
+metadata:
+  name: demo-private-1b
+spec:
+  forProvider:
+    region: us-east-1
+    vpcIdRef:
+      name: demo-vpc
+    cidrBlock: 10.0.11.0/24
+    availabilityZone: us-east-1b
+    mapPublicIpOnLaunch: false
+    tags:
+      Name: demo-private-1b
+  providerConfigRef:
+    name: default
