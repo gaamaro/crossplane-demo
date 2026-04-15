@@ -24,6 +24,7 @@ metadata:
 spec:
   forProvider:
     region: us-east-1
+    name: demo-tg
     port: 80
     protocol: HTTP
     vpcIdRef:
