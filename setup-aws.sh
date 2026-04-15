@@ -91,7 +91,7 @@ step_ok "Temp credentials file cleaned up"
 # ── Install AWS Provider ──
 header "Crossplane AWS Provider"
 
-kubectl apply -f "$(dirname "$0")/crossplane/provider.yaml"
+kubectl apply -f "$(dirname "$0")/infra/crossplane/provider.yaml"
 step_ok "Provider manifest applied"
 
 step_info "Waiting for provider to become healthy (timeout: 120s)..."
@@ -109,7 +109,7 @@ step_ok "Provider is healthy (${SECONDS}s)"
 # ── Apply ProviderConfig ──
 header "Provider Configuration"
 
-kubectl apply -f "$(dirname "$0")/crossplane/provider-config.yaml"
+kubectl apply -f "$(dirname "$0")/infra/crossplane/provider-config.yaml"
 step_ok "ProviderConfig 'default' applied"
 
 # ── Validation ──
