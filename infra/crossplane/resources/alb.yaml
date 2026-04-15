@@ -30,9 +30,9 @@ spec:
       name: demo-vpc
     targetType: instance
     healthCheck:
-    - path: /
+      path: /
       protocol: HTTP
-      intervalSeconds: 30
+      interval: 30
       healthyThreshold: 2
       unhealthyThreshold: 3
     tags:
@@ -49,8 +49,7 @@ spec:
     region: us-east-1
     targetGroupArnRef:
       name: demo-tg
-    targetIdRef:
-      name: demo-instance-a
+    targetId: i-0de1c940a718f28dd
     port: 80
   providerConfigRef:
     name: default
@@ -64,8 +63,7 @@ spec:
     region: us-east-1
     targetGroupArnRef:
       name: demo-tg
-    targetIdRef:
-      name: demo-instance-b
+    targetId: i-03068c84b3306cb99
     port: 80
   providerConfigRef:
     name: default
