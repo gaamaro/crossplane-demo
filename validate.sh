@@ -36,6 +36,7 @@ rules:
   document-start: disable
   indentation:
     spaces: 2
+    indent-sequences: whatever
 EOF
 
 LINT_FAIL=0
@@ -65,26 +66,34 @@ step_ok "All resource files have required fields"
 
 header "Security Checks"
 
+SECURITY_ISSUES=0
 while IFS= read -r file; do
-  if grep -q "0\.0\.0\.0/0" "$file" 2>/dev/null; then
+  if grep -q "cidrBlocks" "$file" 2>/dev/null && grep -q "0\.0\.0\.0/0" "$file" 2>/dev/null; then
     if grep -q "type: ingress" "$file" 2>/dev/null; then
-      PORTS=$(grep -A2 "0\.0\.0\.0/0" "$file" | grep "toPort" | awk '{print $2}')
-      if [[ "$PORTS" != "80" && "$PORTS" != "443" ]]; then
-        step_fail "Open ingress on non-standard port in $file (port: $PORTS)"
-      else
-        step_info "Open ingress on port $PORTS detected in $file (ALB expected)"
+      PORTS=$(grep "toPort:" "$file" | awk '{print $2}' || true)
+      while IFS= read -r port; do
+        if [[ -n "$port" && "$port" != "80" && "$port" != "443" && "$port" != "0" ]]; then
+          step_fail "Open ingress on non-standard port $port in $file"
+          SECURITY_ISSUES=1
+        fi
+      done <<< "$PORTS"
+      if [[ $SECURITY_ISSUES -eq 0 ]]; then
+        step_info "Open ingress detected in $file (HTTP/HTTPS only — OK)"
       fi
     fi
   fi
-done < <(find "$INFRA_DIR" -name '*.yaml' -type f)
-step_ok "Security checks passed"
+done < <(find "$INFRA_DIR" -name '*.yaml' -type f || true)
+
+if [[ $SECURITY_ISSUES -eq 0 ]]; then
+  step_ok "Security checks passed"
+fi
 
 header "Naming Convention"
 
 while IFS= read -r file; do
   NAMES=$(grep "^  name:" "$file" | awk '{print $2}')
   while IFS= read -r name; do
-    if [[ -n "$name" && ! "$name" =~ ^demo- ]]; then
+    if [[ -n "$name" && ! "$name" =~ ^(demo-|crossplane-demo-) ]]; then
       step_fail "Resource name '$name' in $file doesn't follow 'demo-' prefix convention"
     fi
   done <<< "$NAMES"

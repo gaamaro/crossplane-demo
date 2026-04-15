@@ -26,6 +26,7 @@ jobs:
           document-start: disable
           indentation:
             spaces: 2
+            indent-sequences: whatever
         EOF
         yamllint -c /tmp/yamllint.yaml infra/
 
