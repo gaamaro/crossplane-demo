@@ -1,0 +1,109 @@
+apiVersion: ec2.aws.upbound.io/v1beta2
+kind: Instance
+metadata:
+  name: demo-instance-a
+spec:
+  forProvider:
+    region: us-east-1
+    ami: ami-0c1e21d82fe9c9336
+    instanceType: t3.micro
+    subnetIdRef:
+      name: demo-private-1a
+    vpcSecurityGroupIdRefs:
+    - name: demo-ec2-sg
+    iamInstanceProfile: demo-ec2-profile
+    userData: |
+      #!/bin/bash
+      INSTANCE_TAG="a"
+      BUCKET="crossplane-demo-gaamaro"
+
+      yum install -y httpd
+      systemctl enable httpd
+      systemctl start httpd
+
+      aws s3 cp s3://$BUCKET/inventory.csv /tmp/inventory.csv
+
+      TOKEN=$(curl -s -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")
+      PRIVATE_IP=$(curl -s -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/local-ipv4)
+      INSTANCE_ID=$(curl -s -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/instance-id)
+
+      COLOR=$(grep "^${INSTANCE_TAG}," /tmp/inventory.csv | cut -d',' -f2)
+      NAME=$(grep "^${INSTANCE_TAG}," /tmp/inventory.csv | cut -d',' -f3)
+
+      cat > /var/www/html/index.html <<HTML
+      <!DOCTYPE html>
+      <html>
+      <head><title>$NAME</title></head>
+      <body style="background-color: $COLOR; font-family: Arial; color: white; padding: 40px;">
+        <h1>$NAME</h1>
+        <table border="1" cellpadding="10" style="border-collapse: collapse; background: rgba(0,0,0,0.3);">
+          <tr><th>Attribute</th><th>Value</th></tr>
+          <tr><td>Instance Tag</td><td>$INSTANCE_TAG</td></tr>
+          <tr><td>Name</td><td>$NAME</td></tr>
+          <tr><td>Color</td><td>$COLOR</td></tr>
+          <tr><td>Private IP</td><td>$PRIVATE_IP</td></tr>
+          <tr><td>Instance ID</td><td>$INSTANCE_ID</td></tr>
+        </table>
+      </body>
+      </html>
+      HTML
+    tags:
+      Name: demo-instance-a
+      instance: a
+  providerConfigRef:
+    name: default
+---
+apiVersion: ec2.aws.upbound.io/v1beta2
+kind: Instance
+metadata:
+  name: demo-instance-b
+spec:
+  forProvider:
+    region: us-east-1
+    ami: ami-0c1e21d82fe9c9336
+    instanceType: t3.micro
+    subnetIdRef:
+      name: demo-private-1b
+    vpcSecurityGroupIdRefs:
+    - name: demo-ec2-sg
+    iamInstanceProfile: demo-ec2-profile
+    userData: |
+      #!/bin/bash
+      INSTANCE_TAG="b"
+      BUCKET="crossplane-demo-gaamaro"
+
+      yum install -y httpd
+      systemctl enable httpd
+      systemctl start httpd
+
+      aws s3 cp s3://$BUCKET/inventory.csv /tmp/inventory.csv
+
+      TOKEN=$(curl -s -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")
+      PRIVATE_IP=$(curl -s -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/local-ipv4)
+      INSTANCE_ID=$(curl -s -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/instance-id)
+
+      COLOR=$(grep "^${INSTANCE_TAG}," /tmp/inventory.csv | cut -d',' -f2)
+      NAME=$(grep "^${INSTANCE_TAG}," /tmp/inventory.csv | cut -d',' -f3)
+
+      cat > /var/www/html/index.html <<HTML
+      <!DOCTYPE html>
+      <html>
+      <head><title>$NAME</title></head>
+      <body style="background-color: $COLOR; font-family: Arial; color: white; padding: 40px;">
+        <h1>$NAME</h1>
+        <table border="1" cellpadding="10" style="border-collapse: collapse; background: rgba(0,0,0,0.3);">
+          <tr><th>Attribute</th><th>Value</th></tr>
+          <tr><td>Instance Tag</td><td>$INSTANCE_TAG</td></tr>
+          <tr><td>Name</td><td>$NAME</td></tr>
+          <tr><td>Color</td><td>$COLOR</td></tr>
+          <tr><td>Private IP</td><td>$PRIVATE_IP</td></tr>
+          <tr><td>Instance ID</td><td>$INSTANCE_ID</td></tr>
+        </table>
+      </body>
+      </html>
+      HTML
+    tags:
+      Name: demo-instance-b
+      instance: b
+  providerConfigRef:
+    name: default
