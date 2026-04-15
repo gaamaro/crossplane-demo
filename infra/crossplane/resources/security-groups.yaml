@@ -1,0 +1,103 @@
+apiVersion: ec2.aws.upbound.io/v1beta1
+kind: SecurityGroup
+metadata:
+  name: demo-alb-sg
+spec:
+  forProvider:
+    region: us-east-1
+    vpcIdRef:
+      name: demo-vpc
+    name: demo-alb-sg
+    description: Allow HTTP from internet to ALB
+    tags:
+      Name: demo-alb-sg
+  providerConfigRef:
+    name: default
+---
+apiVersion: ec2.aws.upbound.io/v1beta1
+kind: SecurityGroupRule
+metadata:
+  name: demo-alb-ingress-http
+spec:
+  forProvider:
+    region: us-east-1
+    securityGroupIdRef:
+      name: demo-alb-sg
+    type: ingress
+    fromPort: 80
+    toPort: 80
+    protocol: tcp
+    cidrBlocks:
+    - 0.0.0.0/0
+  providerConfigRef:
+    name: default
+---
+apiVersion: ec2.aws.upbound.io/v1beta1
+kind: SecurityGroupRule
+metadata:
+  name: demo-alb-egress-all
+spec:
+  forProvider:
+    region: us-east-1
+    securityGroupIdRef:
+      name: demo-alb-sg
+    type: egress
+    fromPort: 0
+    toPort: 0
+    protocol: "-1"
+    cidrBlocks:
+    - 0.0.0.0/0
+  providerConfigRef:
+    name: default
+---
+apiVersion: ec2.aws.upbound.io/v1beta1
+kind: SecurityGroup
+metadata:
+  name: demo-ec2-sg
+spec:
+  forProvider:
+    region: us-east-1
+    vpcIdRef:
+      name: demo-vpc
+    name: demo-ec2-sg
+    description: Allow HTTP from ALB to EC2
+    tags:
+      Name: demo-ec2-sg
+  providerConfigRef:
+    name: default
+---
+apiVersion: ec2.aws.upbound.io/v1beta1
+kind: SecurityGroupRule
+metadata:
+  name: demo-ec2-ingress-http
+spec:
+  forProvider:
+    region: us-east-1
+    securityGroupIdRef:
+      name: demo-ec2-sg
+    type: ingress
+    fromPort: 80
+    toPort: 80
+    protocol: tcp
+    sourceSecurityGroupIdRef:
+      name: demo-alb-sg
+  providerConfigRef:
+    name: default
+---
+apiVersion: ec2.aws.upbound.io/v1beta1
+kind: SecurityGroupRule
+metadata:
+  name: demo-ec2-egress-all
+spec:
+  forProvider:
+    region: us-east-1
+    securityGroupIdRef:
+      name: demo-ec2-sg
+    type: egress
+    fromPort: 0
+    toPort: 0
+    protocol: "-1"
+    cidrBlocks:
+    - 0.0.0.0/0
+  providerConfigRef:
+    name: default
