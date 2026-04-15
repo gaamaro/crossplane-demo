@@ -1,0 +1,89 @@
+apiVersion: elbv2.aws.upbound.io/v1beta2
+kind: LB
+metadata:
+  name: demo-alb
+spec:
+  forProvider:
+    region: us-east-1
+    internal: false
+    loadBalancerType: application
+    securityGroupRefs:
+    - name: demo-alb-sg
+    subnetRefs:
+    - name: demo-public-1a
+    - name: demo-public-1b
+    tags:
+      Name: demo-alb
+  providerConfigRef:
+    name: default
+---
+apiVersion: elbv2.aws.upbound.io/v1beta2
+kind: LBTargetGroup
+metadata:
+  name: demo-tg
+spec:
+  forProvider:
+    region: us-east-1
+    port: 80
+    protocol: HTTP
+    vpcIdRef:
+      name: demo-vpc
+    targetType: instance
+    healthCheck:
+    - path: /
+      protocol: HTTP
+      intervalSeconds: 30
+      healthyThreshold: 2
+      unhealthyThreshold: 3
+    tags:
+      Name: demo-tg
+  providerConfigRef:
+    name: default
+---
+apiVersion: elbv2.aws.upbound.io/v1beta1
+kind: LBTargetGroupAttachment
+metadata:
+  name: demo-tg-attach-a
+spec:
+  forProvider:
+    region: us-east-1
+    targetGroupArnRef:
+      name: demo-tg
+    targetIdRef:
+      name: demo-instance-a
+    port: 80
+  providerConfigRef:
+    name: default
+---
+apiVersion: elbv2.aws.upbound.io/v1beta1
+kind: LBTargetGroupAttachment
+metadata:
+  name: demo-tg-attach-b
+spec:
+  forProvider:
+    region: us-east-1
+    targetGroupArnRef:
+      name: demo-tg
+    targetIdRef:
+      name: demo-instance-b
+    port: 80
+  providerConfigRef:
+    name: default
+---
+apiVersion: elbv2.aws.upbound.io/v1beta2
+kind: LBListener
+metadata:
+  name: demo-listener
+spec:
+  forProvider:
+    region: us-east-1
+    loadBalancerArnRef:
+      name: demo-alb
+    port: 80
+    protocol: HTTP
+    defaultAction:
+    - type: forward
+      targetGroupArnRef:
+        name: demo-tg
+  providerConfigRef:
+    name: default
