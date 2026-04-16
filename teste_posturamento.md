@@ -3,10 +3,10 @@
 **Teste 1 — Drift na AWS (Crossplane corrige):**
 ```bash
 # Adiciona uma tag direto na AWS
-aws ec2 create-tags --resources i-0de1c940a718f28dd --tags Key=hacked,Value=true
+aws ec2 create-tags --resources i-049c45231077a47b8 --tags Key=hacked,Value=true
 
 # Espera ~1min e verifica se o Crossplane removeu
-aws ec2 describe-tags --filters "Name=resource-id,Values=i-0de1c940a718f28dd"
+aws ec2 describe-tags --filters "Name=resource-id,Values=i-049c45231077a47b8" --no-cli-pager | grep -B1 -A4 hacked
 ```
 
 **Teste 2 — Drift no cluster (ArgoCD corrige):**
@@ -26,3 +26,5 @@ aws s3 rb s3://crossplane-demo-gaamaro
 # Espera ~1min e verifica se recriou
 aws s3 ls | grep crossplane-demo
 ```
+
+
